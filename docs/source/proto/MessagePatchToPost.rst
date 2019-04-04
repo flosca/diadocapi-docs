@@ -1,6 +1,16 @@
 MessagePatchToPost
 ==================
 
+Структура данных *MessagePatchToPost* представляет дополнение к сообщению, подлежащее отправке через Диадок при помощи метода :doc:`../http/PostMessagePatch`:
+
+Обязательные для заполнения поля:
+
+-  *BoxId* - идентификатор ящика, в котором находится исходное сообщение.
+
+-  *MessageId* - идентификатор сообщения, к которому относится отправляемый патч.
+
+Далее следует указать хотя бы одну из сущностей, которой нужно дополнить сообщение. О каждой из них подробнее ниже.
+
 .. code-block:: protobuf
 
     message MessagePatchToPost {
@@ -10,8 +20,6 @@ MessagePatchToPost
         repeated CorrectionRequestAttachment CorrectionRequests = 4;
         repeated DocumentSignature Signatures = 5;
         repeated RequestedSignatureRejection RequestedSignatureRejections = 6;
-        repeated RecipientTitleAttachment XmlTorg12BuyerTitles = 7;
-        repeated RecipientTitleAttachment XmlAcceptanceCertificateBuyerTitles = 8;
         repeated ResolutionAttachment Resolutions = 9;
         repeated ResolutionRequestAttachment ResolutionRequests = 10;
         repeated ResolutionRequestCancellationAttachment ResolutionRequestCancellations = 11;
@@ -23,11 +31,19 @@ MessagePatchToPost
         repeated ResolutionRouteAssignment ResolutionRouteAssignments = 17;
         repeated SignatureVerification SignatureVerifications = 18;
         repeated EditDocumentPacketCommand EditDocumentPacketCommands = 19;
-        repeated RecipientTitleAttachment UniversalTransferDocumentBuyerTitles = 20;
         repeated ResolutionRouteRemoval ResolutionRouteRemovals = 21;
         repeated RecipientTitleAttachment RecipientTitles = 22; 
         repeated EditingPatch EditingPatches = 24;
     }
+
+Отправка титулов получателя
+___________________________
+
+Чтобы приложить к патчу титул получателя, нужно заполнить поле *RecipientTitles*. Работает для любого двухтитульного типа документа.
+
+Поле представлено структурой `RecipientTitleAttachment`.
+
+.. code-block:: protobuf
 
     message RecipientTitleAttachment {
         required string ParentEntityId = 1;
@@ -35,6 +51,20 @@ MessagePatchToPost
         repeated string Labels = 4;
         required bool NeedReceipt = 5 [default = false];
     }
+
+-  *ParentEntityId* - идентификатор документа. Это идентификатор соответствующей сущности из родительского сообщения (поле EntityId в структуре :doc:`Entity <Entity message>`).
+
+-  *SignedContent* - содержимое файла извещения вместе с ЭП под ним в виде структуры :doc:`SignedContent`. В случае *ReceiptAttachment* поле *SignedContent.SignByAttorney* не может быть равно true (подпись "по доверенности" под извещениями о получении документов запрашивать нельзя).
+
+-  *Labels* - :doc:`метки <Labels>` извещения о получении.
+
+Отправка извещений о получении
+___________________________
+
+-  *Receipts* - список подлежащих отправке извещений о получении различных документов, предусмотренных порядком обмена электронными счетами-фактурами.
+
+
+.. code-block:: protobuf
 
     message ReceiptAttachment {
         required string ParentEntityId = 1;
@@ -99,27 +129,12 @@ MessagePatchToPost
         repeated string Labels = 3;
     }
 
-Структура данных *MessagePatchToPost* представляет дополнение к сообщению, подлежащее отправке через Диадок при помощи метода :doc:`../http/PostMessagePatch`:
-
--  *BoxId* - идентификатор ящика, в котором находится исходное сообщение.
-
--  *MessageId* - идентификатор сообщения, к которому относится отправляемый патч.
-
--  *Receipts* - список подлежащих отправке извещений о получении различных документов, предусмотренных порядком обмена электронными счетами-фактурами.
 
 -  *CorrectionRequests* - список подлежащих отправке уведомлений об уточнении СФ/ИСФ/КСФ/ИКСФ, предусмотренных порядком обмена электронными счетами-фактурами.
 
 -  *Signatures* - список подписей под документами (см. описание структуры :doc:`DocumentSignature <DocumentSignature>`). Подписи могут быть подписями отправителя (для отправки документов, сохраненных без отправки), подписями получателя (для двусторонних документов с запросом подписи), согласующими подписями под документом, а также ответными подписями под запросом на аннулирование документа.
 
 -  *RequestedSignatureRejections* - список отказов от запрошенных подписей под двусторонними документами.
-
--  *XmlTorg12BuyerTitles* - список подлежащих отправке титулов покупателя для товарных накладных ТОРГ-12 в XML-формате.
-
--  *XmlAcceptanceCertificateBuyerTitles* - список подлежащих отправке титулов заказчика для актов о выполнении работ (оказании услуг) в XML-формате.
-
--  *RecipientTitles* - список подлежащих отправке титулов получателя для любого типа документов. 
-
-.. warning:: Рекомендуется использовать поле *RecipientTitles* вместо *XmlTorg12BuyerTitles*, *XmlAcceptanceCertificateBuyerTitles* и *UniversalTransferDocumentBuyerTitles*.
 
 .. note:: Если тип документа поддерживает документооборот с извещением о получении на титул получателя (см. структуру :doc:`DocumentWorkflow`), то можно запросить извещение через флаг NeedReceipt.
 
